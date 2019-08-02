@@ -20,11 +20,11 @@ public class CarAgent : Agent
 
     void MoveCar(float horizontal, float vertical)
     {
-        float moveDist = speed * vertical;
-        transform.Translate(Vector3.forward * moveDist * Time.fixedDeltaTime);
+        float distance = speed * vertical;
+        transform.Translate(Vector3.forward * distance * Time.fixedDeltaTime);
 
-        float rotDist = horizontal * torque * 90f;
-        transform.Rotate(0f, rotDist * Time.fixedDeltaTime, 0f);
+        float rotation = horizontal * torque * 90f;
+        transform.Rotate(0f, rotation * Time.fixedDeltaTime, 0f);
     }
     
     public override void AgentAction(float[] vectorAction, string textAction)

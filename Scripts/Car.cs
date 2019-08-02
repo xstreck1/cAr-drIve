@@ -9,7 +9,7 @@ public class Car : MonoBehaviour
 
     public int score = 0;
 
-    private Transform _currentTrack;
+    private Transform _track;
 
     // Start is called before the first frame update
     void Start()
@@ -38,19 +38,19 @@ public class Car : MonoBehaviour
     {
         int reward = 0;
         RaycastHit hit;
-        if (Physics.Raycast(transform.position + Vector3.up, Vector3.down, out hit, 2f))
+        var carCenter = transform.position + Vector3.up;
+        if (Physics.Raycast(carCenter, Vector3.down, out hit, 2f))
         {
-            Debug.DrawRay(transform.position + Vector3.up, Vector3.down * 2f, Color.white);
+            Debug.DrawRay(carCenter, Vector3.down * 2f, Color.white);
             var newHit = hit.transform;
-            if (_currentTrack != null && newHit != _currentTrack)
+            if (_track != null && newHit != _track)
             {
-                reward = (Vector3.Distance(newHit.position, _currentTrack.position + _currentTrack.forward * 10) < 1f)
-                    ? 1
-                    : -1;
+                Vector3 pos = _track.position + _track.forward * 10;
+                float dist = Vector3.Distance(newHit.position,pos);
+                reward = (dist < 1f) ? 1 : -1;
             }
-
-            _currentTrack = hit.transform;
-            Debug.Log($"Currently on {_currentTrack.name}");
+            _track = hit.transform;
+            Debug.Log($"Currently on {_track.name}");
         }
 
         return reward;
