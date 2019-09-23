@@ -15,38 +15,34 @@ public class CarAgent : Agent
 
     public override void InitializeAgent()
     {
-        
+        Raycast();
     }
-
-    void MoveCar(float horizontal, float vertical)
+    
+    void MoveCar(float horizontal, float vertical, float dt)
     {
         float distance = speed * vertical;
-        transform.Translate(Vector3.forward * distance * Time.fixedDeltaTime);
+        transform.Translate(Vector3.forward * distance * dt);
 
         float rotation = horizontal * torque * 90f;
-        transform.Rotate(0f, rotation * Time.fixedDeltaTime, 0f);
+        transform.Rotate(0f, rotation * dt, 0f);
     }
+    
     
     public override void AgentAction(float[] vectorAction, string textAction)
     {
+        var lastPos = transform.position;
+        
         float horizontal = vectorAction[0];
         float vertical = vectorAction[1];
 
-        Vector3 lastPos = transform.position;
-        MoveCar(horizontal, vertical);
-        Vector3 moveVect = (transform.position - lastPos) / Time.fixedDeltaTime;
+        float dt = Time.fixedDeltaTime;
+        MoveCar(horizontal, vertical, dt);
         
-        if (_currentTrack)
-        {
-            var desireVec = (Vector3.Scale(moveVect, _currentTrack.forward));
-            AddReward(-0.001f + 0.001f * (desireVec.x + desireVec.y + desireVec.z));
-        }
-
         int reward = Raycast();
-        if (reward != 0)
-        {
-            AddReward(reward);
-        }
+
+        var moveVec = (transform.position - lastPos) / (dt * speed);
+        float dirReward = (moveVec + _currentTrack.forward).magnitude;
+        AddReward(0.001f * (dirReward - 1f) + reward);
         score += reward;
     }
     
@@ -58,7 +54,6 @@ public class CarAgent : Agent
         {
             angle = Vector3.SignedAngle(_currentTrack.forward, transform.forward, Vector3.up);
         }
-        // Debug.Log(angle);
         AddVectorObs(angle / 180f);
         
         // Raycast
@@ -68,17 +63,28 @@ public class CarAgent : Agent
         ObserveRay(-1.5f, 0, 180f);
     }
 
-    void ObserveRay(float x, float y, float angle)
+    // Casts a ray from a point in a direction based on the car position
+    // z: offset of the ray origin from the car centre on the z axis
+    // x: as above but on the x
+    // angle: direction of the ray from its origin
+    void ObserveRay(float z, float x, float angle)
     {
-        var raySource = transform.position + Vector3.up / 2f; 
-        const float RAY_DIST = 5f;
-        var position = raySource + transform.forward * x + transform.right * y;
+        var tf = transform;
         
-        Vector3 direction = Quaternion.Euler(0, angle, 0f) * transform.forward;
-        RaycastHit hit;
-        Physics.Raycast(position, direction, out hit, RAY_DIST);
-        Debug.DrawRay(position, direction * (hit.distance > 0 ? hit.distance : RAY_DIST), Color.yellow);
-        AddVectorObs(hit.distance > 0 ? hit.distance / RAY_DIST : -1f);
+        // Get the start position of the ray
+        var raySource = tf.position + Vector3.up / 2f; 
+        const float RAY_DIST = 5f;
+        var position = raySource + tf.forward * z + tf.right * x;
+
+        // Get the angle of the ray
+        var eulerAngle = Quaternion.Euler(0, angle, 0f);
+        var dir = eulerAngle * tf.forward;
+        
+        // See if there is a hit in the given direction
+        Physics.Raycast(position, dir, out var hit, RAY_DIST);
+        AddVectorObs(hit.distance >= 0 ? hit.distance / RAY_DIST : -1f);
+        
+        Debug.DrawRay(position, dir * (hit.distance > 0 ? hit.distance : RAY_DIST), Color.yellow);
     }
     
     int Raycast()
@@ -116,7 +122,7 @@ public class CarAgent : Agent
     {
         if (other.gameObject.tag == "wall")
         {
-            AddReward(-1f);
+            SetReward(-1f);
             Done();
         }
     }

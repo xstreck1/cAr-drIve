@@ -21,17 +21,20 @@ public class Car : MonoBehaviour
     {
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
-        MoveCar(horizontal, vertical);
+        float dt = Time.deltaTime;
+        MoveCar(horizontal, vertical, dt);
         score += Raycast();
     }
 
-    void MoveCar(float horizontal, float vertical)
+    void MoveCar(float horizontal, float vertical, float dt)
     {
+        // Translated in the direction the car is facing
         float moveDist = speed * vertical;
-        transform.Translate(Vector3.forward * moveDist * Time.deltaTime);
+        transform.Translate(Vector3.forward * moveDist * dt);
 
-        float rotDist = moveDist * horizontal * torque;
-        transform.Rotate(0f, rotDist * Time.deltaTime, 0f);
+        // Rotate alongside it up axis 
+        float rotation = horizontal * torque * 90f;
+        transform.Rotate(0f, rotation * dt, 0f);
     }
 
     int Raycast()
