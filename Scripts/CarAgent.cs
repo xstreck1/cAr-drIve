@@ -37,9 +37,10 @@ public class CarAgent : Agent
 
         int reward = Raycast();
         
-        var moveVect = transform.position - lastPos;
-        float direction = Vector3.Angle(moveVect,_currentTrack.forward);
-        AddReward(0.001f * (90f - direction) * Mathf.Abs(vertical) + reward);
+        var moveVec = transform.position - lastPos;
+        float direction = Vector3.Angle(moveVec,_currentTrack.forward);
+        float bonus = 0.001f * (90f - direction) * Mathf.Abs(vertical);
+        AddReward(bonus + reward);
 
         score += reward;
     }
@@ -48,10 +49,8 @@ public class CarAgent : Agent
     {
         float angle = Vector3.SignedAngle(_currentTrack.forward, transform.forward, Vector3.up);
 
-        // Debug.Log(angle);
         AddVectorObs(angle / 180f);
 
-        // Raycast
         ObserveRay(1.5f, .5f, 25f);
         ObserveRay(1.5f, 0f, 0f);
         ObserveRay(1.5f, -.5f, -25f);
