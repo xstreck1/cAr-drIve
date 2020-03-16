@@ -18,22 +18,39 @@ public class CarAgent : Agent
         Raycast();
     }
 
+    void MoveCar(float horizontal, float vertical, float dt)
+    {
+        float distance = speed * vertical;
+        transform.Translate(distance * dt * Vector3.forward);
+
+        float rotation = horizontal * torque * 90f;
+        transform.Rotate(0f, rotation * dt, 0f);
+    }
+
     public override void AgentAction(float[] vectorAction)
     {
         float horizontal = vectorAction[0];
         float vertical = vectorAction[1];
 
         var lastPos = transform.position;
-        MoveCar(horizontal, vertical, Time.fixedDeltaTime);
+        MoveCar(horizontal, vertical, Time.deltaTime);
 
         int reward = Raycast();
-
+        
         var moveVec = transform.position - lastPos;
-        float direction = Vector3.Angle(moveVec, _track.forward);
-        float bonus = 0.001f * (90f - direction) * vertical;
+        float angle = Vector3.Angle(moveVec, _track.forward);
+        float bonus = (1f - angle / 90f) * Mathf.Clamp01(vertical) * Time.fixedDeltaTime;
         AddReward(bonus + reward);
 
         score += reward;
+    }
+
+    public override float[] Heuristic()
+    {
+        var action = new float[2];
+        action[0] = Input.GetAxis("Horizontal");
+        action[1] = Input.GetAxis("Vertical");
+        return action;
     }
 
     public override void CollectObservations()
@@ -48,48 +65,21 @@ public class CarAgent : Agent
         ObserveRay(-1.5f, 0, 180f);
     }
 
-    public override void AgentReset()
-    {
-        if (resetOnCollision)
-        {
-            transform.localPosition = Vector3.zero;
-            transform.localRotation = Quaternion.identity;
-        }
-    }
-
-    private void MoveCar(float horizontal, float vertical, float dt)
-    {
-        // Translated in the direction the car is facing
-        float moveDist = speed * vertical;
-        transform.Translate(dt * moveDist * Vector3.forward);
-
-        // Rotate alongside it up axis 
-        float rotation = horizontal * torque * 90f;
-        transform.Rotate(0f, rotation * dt, 0f);
-    }
-
-    // Casts a ray from a point in a direction based on the car position
-    // z: offset of the ray origin from the car centre on the z axis
-    // x: as above but on the x
-    // angle: direction of the ray from its origin
     private void ObserveRay(float z, float x, float angle)
     {
         var tf = transform;
-
+    
         // Get the start position of the ray
-        var raySource = tf.position + Vector3.up / 2f;
+        var raySource = tf.position + Vector3.up / 2f; 
         const float RAY_DIST = 5f;
         var position = raySource + tf.forward * z + tf.right * x;
 
         // Get the angle of the ray
         var eulerAngle = Quaternion.Euler(0, angle, 0f);
         var dir = eulerAngle * tf.forward;
-
-        
+    
         // See if there is a hit in the given direction
         Physics.Raycast(position, dir, out var hit, RAY_DIST);
-        
-        Debug.DrawRay(position, dir * (hit.distance > 0 ? hit.distance : RAY_DIST), Color.yellow);
         AddVectorObs(hit.distance >= 0 ? hit.distance / RAY_DIST : -1f);
     }
 
@@ -114,6 +104,15 @@ public class CarAgent : Agent
         }
 
         return reward;
+    }
+
+    public override void AgentReset()
+    {
+        if (resetOnCollision)
+        {
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+        }
     }
 
     private void OnCollisionEnter(Collision other)
