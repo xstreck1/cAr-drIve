@@ -15,10 +15,10 @@ public class CarAgent : Agent
 
     public override void InitializeAgent()
     {
-        Raycast();
+        GetTrackIncrement();
     }
 
-    void MoveCar(float horizontal, float vertical, float dt)
+    private void MoveCar(float horizontal, float vertical, float dt)
     {
         float distance = speed * vertical;
         transform.Translate(distance * dt * Vector3.forward);
@@ -33,9 +33,9 @@ public class CarAgent : Agent
         float vertical = vectorAction[1];
 
         var lastPos = transform.position;
-        MoveCar(horizontal, vertical, Time.deltaTime);
+        MoveCar(horizontal, vertical, Time.fixedDeltaTime);
 
-        int reward = Raycast();
+        int reward = GetTrackIncrement();
         
         var moveVec = transform.position - lastPos;
         float angle = Vector3.Angle(moveVec, _track.forward);
@@ -83,7 +83,7 @@ public class CarAgent : Agent
         AddVectorObs(hit.distance >= 0 ? hit.distance / RAY_DIST : -1f);
     }
 
-    private int Raycast()
+    private int GetTrackIncrement()
     {
         int reward = 0;
         var carCenter = transform.position + Vector3.up;
@@ -95,12 +95,11 @@ public class CarAgent : Agent
             // Check if the tile has changed
             if (_track != null && newHit != _track)
             {
-                var pos = _track.position + _track.forward * 10;
-                float dist = Vector3.Distance(newHit.position, pos);
-                reward = (dist < 1f) ? 1 : -1;
+                float angle = Vector3.Angle(_track.forward, newHit.position - _track.position);
+                reward = (angle < 90f) ? 1 : -1;
             }
 
-            _track = hit.transform;
+            _track = newHit;
         }
 
         return reward;

@@ -5,55 +5,49 @@ using UnityEngine;
 public class Car : MonoBehaviour
 {
     public float speed = 10f;
-    public float torque = 10f;
+    public float torque = 1f;
 
     public int score = 0;
 
     private Transform _track;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-    }
-
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
         float dt = Time.deltaTime;
         MoveCar(horizontal, vertical, dt);
-        score += Raycast();
+        score += GetTrackIncrement();
     }
 
-    void MoveCar(float horizontal, float vertical, float dt)
+    private  void MoveCar(float horizontal, float vertical, float dt)
     {
         // Translated in the direction the car is facing
         float moveDist = speed * vertical;
-        transform.Translate(Vector3.forward * moveDist * dt);
+        transform.Translate(dt * moveDist * Vector3.forward);
 
         // Rotate alongside it up axis 
         float rotation = horizontal * torque * 90f;
         transform.Rotate(0f, rotation * dt, 0f);
     }
 
-    int Raycast()
+    private int GetTrackIncrement()
     {
         int reward = 0;
-        RaycastHit hit;
         var carCenter = transform.position + Vector3.up;
-        if (Physics.Raycast(carCenter, Vector3.down, out hit, 2f))
+
+        // Find what tile I'm on
+        if (Physics.Raycast(carCenter, Vector3.down, out var hit, 2f))
         {
-            Debug.DrawRay(carCenter, Vector3.down * 2f, Color.white);
             var newHit = hit.transform;
+            // Check if the tile has changed
             if (_track != null && newHit != _track)
             {
-                Vector3 pos = _track.position + _track.forward * 10;
-                float dist = Vector3.Distance(newHit.position,pos);
-                reward = (dist < 1f) ? 1 : -1;
+                float angle = Vector3.Angle(_track.forward, newHit.position - _track.position);
+                reward = (angle < 90f) ? 1 : -1;
             }
-            _track = hit.transform;
-            Debug.Log($"Currently on {_track.name}");
+
+            _track = newHit;
         }
 
         return reward;
