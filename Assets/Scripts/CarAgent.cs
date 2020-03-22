@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using MLAgents;
+using MLAgents.Sensors;
 using UnityEngine;
 
 public class CarAgent : Agent
@@ -13,7 +14,7 @@ public class CarAgent : Agent
 
     private Transform _track;
 
-    public override void InitializeAgent()
+    public override void Initialize()
     {
         GetTrackIncrement();
     }
@@ -27,7 +28,7 @@ public class CarAgent : Agent
         transform.Rotate(0f, rotation * dt, 0f);
     }
 
-    public override void AgentAction(float[] vectorAction)
+    public override void OnActionReceived(float[] vectorAction)
     {
         float horizontal = vectorAction[0];
         float vertical = vectorAction[1];
@@ -53,19 +54,18 @@ public class CarAgent : Agent
         return action;
     }
 
-    public override void CollectObservations()
+    public override void CollectObservations(VectorSensor vectorSensor)
     {
         float angle = Vector3.SignedAngle(_track.forward, transform.forward, Vector3.up);
 
-        AddVectorObs(angle / 180f);
-
-        ObserveRay(1.5f, .5f, 25f);
-        ObserveRay(1.5f, 0f, 0f);
-        ObserveRay(1.5f, -.5f, -25f);
-        ObserveRay(-1.5f, 0, 180f);
+        vectorSensor.AddObservation(angle / 180f);
+        vectorSensor.AddObservation(ObserveRay(1.5f, .5f, 25f));
+        vectorSensor.AddObservation(ObserveRay(1.5f, 0f, 0f));
+        vectorSensor.AddObservation(ObserveRay(1.5f, -.5f, -25f));
+        vectorSensor.AddObservation(ObserveRay(-1.5f, 0, 180f));
     }
 
-    private void ObserveRay(float z, float x, float angle)
+    private float ObserveRay(float z, float x, float angle)
     {
         var tf = transform;
     
@@ -80,7 +80,7 @@ public class CarAgent : Agent
     
         // See if there is a hit in the given direction
         Physics.Raycast(position, dir, out var hit, RAY_DIST);
-        AddVectorObs(hit.distance >= 0 ? hit.distance / RAY_DIST : -1f);
+        return hit.distance >= 0 ? hit.distance / RAY_DIST : -1f;
     }
 
     private int GetTrackIncrement()
@@ -105,7 +105,7 @@ public class CarAgent : Agent
         return reward;
     }
 
-    public override void AgentReset()
+    public override void OnEpisodeBegin()
     {
         if (resetOnCollision)
         {
