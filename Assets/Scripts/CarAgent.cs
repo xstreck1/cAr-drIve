@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using MLAgents;
-using MLAgents.Sensors;
+using Unity.MLAgents;
+using Unity.MLAgents.Sensors;
 using UnityEngine;
 
 public class CarAgent : Agent
@@ -46,12 +46,10 @@ public class CarAgent : Agent
         score += reward;
     }
 
-    public override float[] Heuristic()
+    public override void Heuristic(float[] action)
     {
-        var action = new float[2];
         action[0] = Input.GetAxis("Horizontal");
         action[1] = Input.GetAxis("Vertical");
-        return action;
     }
 
     public override void CollectObservations(VectorSensor vectorSensor)
@@ -119,7 +117,7 @@ public class CarAgent : Agent
         if (other.gameObject.CompareTag("wall"))
         {
             SetReward(-1f);
-            Done();
+            EndEpisode();
         }
     }
 }
