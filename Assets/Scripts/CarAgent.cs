@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using Unity.MLAgents;
+﻿using Unity.MLAgents;
 using Unity.MLAgents.Sensors;
 using UnityEngine;
 
@@ -41,7 +39,7 @@ public class CarAgent : Agent
         var moveVec = transform.position - lastPos;
         float angle = Vector3.Angle(moveVec, _track.forward);
         float bonus = (1f - angle / 90f) * Mathf.Clamp01(vertical) * Time.fixedDeltaTime;
-        AddReward(bonus + reward);
+        AddReward(bonus);
 
         score += reward;
     }
